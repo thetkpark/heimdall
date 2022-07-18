@@ -16,11 +16,11 @@ var _ = Describe("AES Encryption", Label("encryption"), func() {
 	})
 
 	It("can encrypt and decrypt", func() {
-		base64CipherText, err := aes.Encrypt(plaintext)
+		cipherText, err := aes.Encrypt(plaintext)
 		Expect(err).To(BeNil())
-		Expect(base64CipherText).ToNot(BeEmpty())
+		Expect(cipherText).ToNot(BeEmpty())
 
-		decryptedPlainText, err := aes.Decrypt(base64CipherText)
+		decryptedPlainText, err := aes.Decrypt(cipherText)
 		Expect(err).To(BeNil())
 		Expect(decryptedPlainText).To(Equal(plaintext))
 	})

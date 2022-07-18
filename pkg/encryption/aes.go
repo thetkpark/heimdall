@@ -4,14 +4,13 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"io"
 )
 
 type Encryption interface {
-	Encrypt(plainText string) (string, error)
-	Decrypt(cipherText string) (string, error)
+	Encrypt(plainText string) ([]byte, error)
+	Decrypt(cipherText []byte) (string, error)
 }
 
 func NewAESEncryption(key []byte) (*AES, error) {
@@ -33,21 +32,16 @@ type AES struct {
 	gcm cipher.AEAD
 }
 
-func (a AES) Encrypt(plaintext string) (string, error) {
+func (a AES) Encrypt(plaintext string) ([]byte, error) {
 	nonce := make([]byte, a.gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", err
+		return nil, err
 	}
 	cipherText := a.gcm.Seal(nonce, nonce, []byte(plaintext), nil)
-	return base64.StdEncoding.EncodeToString(cipherText), nil
+	return cipherText, nil
 }
 
-func (a AES) Decrypt(base64CipherText string) (string, error) {
-	cipherText, err := base64.StdEncoding.DecodeString(base64CipherText)
-	if err != nil {
-		return "", err
-	}
-
+func (a AES) Decrypt(cipherText []byte) (string, error) {
 	nonceSize := a.gcm.NonceSize()
 	if len(cipherText) < nonceSize {
 		return "", errors.New("ciphertext length is shorter than nonce size")
