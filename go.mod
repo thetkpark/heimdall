@@ -3,9 +3,15 @@ module github.com/thetkpark/heimdall
 go 1.18
 
 require (
-	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6 // indirect
+	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
+	github.com/gin-gonic/gin v1.8.1
+	github.com/onsi/ginkgo/v2 v2.1.4
+	github.com/onsi/gomega v1.19.0
+	go.uber.org/zap v1.21.0
+)
+
+require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
@@ -19,7 +25,6 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
