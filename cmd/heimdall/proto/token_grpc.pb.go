@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.4
-// source: cmd/heimdall-grpc/proto/token.proto
+// source: cmd/heimdall/proto/token.proto
 
 package proto
 
@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TokenClient interface {
-	GetToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	GenerateToken(ctx context.Context, in *GenerateTokenRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 }
 
 type tokenClient struct {
@@ -33,9 +33,9 @@ func NewTokenClient(cc grpc.ClientConnInterface) TokenClient {
 	return &tokenClient{cc}
 }
 
-func (c *tokenClient) GetToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+func (c *tokenClient) GenerateToken(ctx context.Context, in *GenerateTokenRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
 	out := new(TokenResponse)
-	err := c.cc.Invoke(ctx, "/Token/GetToken", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Token/GenerateToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *tokenClient) GetToken(ctx context.Context, in *TokenRequest, opts ...gr
 // All implementations must embed UnimplementedTokenServer
 // for forward compatibility
 type TokenServer interface {
-	GetToken(context.Context, *TokenRequest) (*TokenResponse, error)
+	GenerateToken(context.Context, *GenerateTokenRequest) (*TokenResponse, error)
 	mustEmbedUnimplementedTokenServer()
 }
 
@@ -54,8 +54,8 @@ type TokenServer interface {
 type UnimplementedTokenServer struct {
 }
 
-func (UnimplementedTokenServer) GetToken(context.Context, *TokenRequest) (*TokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetToken not implemented")
+func (UnimplementedTokenServer) GenerateToken(context.Context, *GenerateTokenRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateToken not implemented")
 }
 func (UnimplementedTokenServer) mustEmbedUnimplementedTokenServer() {}
 
@@ -70,20 +70,20 @@ func RegisterTokenServer(s grpc.ServiceRegistrar, srv TokenServer) {
 	s.RegisterService(&Token_ServiceDesc, srv)
 }
 
-func _Token_GetToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TokenRequest)
+func _Token_GenerateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TokenServer).GetToken(ctx, in)
+		return srv.(TokenServer).GenerateToken(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Token/GetToken",
+		FullMethod: "/Token/GenerateToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TokenServer).GetToken(ctx, req.(*TokenRequest))
+		return srv.(TokenServer).GenerateToken(ctx, req.(*GenerateTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,10 +96,10 @@ var Token_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TokenServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetToken",
-			Handler:    _Token_GetToken_Handler,
+			MethodName: "GenerateToken",
+			Handler:    _Token_GenerateToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "cmd/heimdall-grpc/proto/token.proto",
+	Metadata: "cmd/heimdall/proto/token.proto",
 }

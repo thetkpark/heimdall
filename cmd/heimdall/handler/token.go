@@ -85,7 +85,6 @@ func (h TokenHandler) VerifyAndSetHeader(c *gin.Context) {
 	for i := 0; i < reflect.TypeOf(payload.CustomPayload).NumField(); i++ {
 		field := reflect.TypeOf(payload.CustomPayload).Field(i)
 		headerName := field.Tag.Get("header")
-		h.logger.Info("headerName", headerName)
 		if len(headerName) > 0 {
 			val := fmt.Sprintf("%v", reflect.ValueOf(payload.CustomPayload).Field(i))
 			c.Header(headerName, val)

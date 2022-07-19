@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "github.com/thetkpark/heimdall/cmd/heimdall/proto";
+
+service Token {
+  rpc GenerateToken(GenerateTokenRequest) returns (TokenResponse) {}
+}
+
+message GenerateTokenRequest {
+  uint64 UserID = 1;
+}
+
+message TokenResponse {
+  string Token = 1;
+}

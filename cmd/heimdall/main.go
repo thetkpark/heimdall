@@ -1,16 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fvbock/endless"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	grpc2 "github.com/thetkpark/heimdall/cmd/heimdall/grpc"
 	"github.com/thetkpark/heimdall/cmd/heimdall/handler"
+	pb "github.com/thetkpark/heimdall/cmd/heimdall/proto"
 	"github.com/thetkpark/heimdall/pkg/config"
 	"github.com/thetkpark/heimdall/pkg/logger"
 	"github.com/thetkpark/heimdall/pkg/signature"
 	"github.com/thetkpark/heimdall/pkg/token"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
@@ -35,6 +40,7 @@ func main() {
 	}
 	defer sentry.Flush(2 * time.Second)
 
+	ginLogger := sugaredLogger.Named("gin")
 	gin.SetMode(cfg.GinMode)
 	router := gin.Default()
 	router.Use(sentrygin.New(sentrygin.Options{
@@ -46,13 +52,26 @@ func main() {
 			"timestamp": time.Now(),
 		})
 	})
-
 	signatureManager := signature.NewJWS(cfg.JWSSecretKey)
 	tokenManager := token.NewTokenManager(signatureManager, nil)
-	tokenHandler := handler.NewTokenHandler(sugaredLogger, tokenManager, cfg.TokenValidTime)
+	tokenHandler := handler.NewTokenHandler(ginLogger, tokenManager, cfg.TokenValidTime)
 	router.GET("/verify", tokenHandler.AuthenticateToken, tokenHandler.VerifyToken)
 	router.GET("/auth", tokenHandler.AuthenticateToken, tokenHandler.VerifyAndSetHeader)
 	router.POST("/generate", tokenHandler.GenerateToken)
+	go endless.ListenAndServe(":8080", router)
 
-	_ = endless.ListenAndServe(":8080", router)
+	// gRPC
+	grpcLogger := sugaredLogger.Named("grpc")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 5050))
+	if err != nil {
+		grpcLogger.Fatalw("Failed to listen", "error", err, "port", 5050)
+	}
+
+	grpcServer := grpc.NewServer()
+	grpcTokenServer := grpc2.NewTokenServer(grpcLogger, tokenManager, cfg.TokenValidTime)
+	pb.RegisterTokenServer(grpcServer, grpcTokenServer)
+	grpcLogger.Infof("Starting gRPC server on port")
+	if err := grpcServer.Serve(lis); err != nil {
+		grpcLogger.Fatalw("Failed to start gRPC server", "error", err)
+	}
 }
