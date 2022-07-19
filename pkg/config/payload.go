@@ -3,12 +3,12 @@ package config
 import "time"
 
 type MetadataPayload struct {
-	IssuedAt  time.Time
-	ExpiredAt time.Time
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiredAt time.Time `json:"expired_at"`
 }
 
 type CustomPayload struct {
-	UserID uint32 `header:"X-USER_ID"`
+	UserID uint32 `json:"user_id" header:"X-USER-ID"`
 }
 
 type Payload struct {
