@@ -9,7 +9,7 @@ import (
 
 type Manager interface {
 	Generate(payload config.Payload) (string, error)
-	Parse(token string) (config.Payload, error)
+	Parse(token string) (*config.Payload, error)
 }
 
 func NewTokenManager(sig signature.Manager, enc encryption.Manager) *manager {
@@ -46,19 +46,20 @@ func (m manager) Generate(payload config.Payload) (string, error) {
 	return string(token), nil
 }
 
-func (m manager) Parse(token string) (payload config.Payload, err error) {
+func (m manager) Parse(token string) (*config.Payload, error) {
 	rawPayload, err := m.signatureManager.Verify([]byte(token))
 	if err != nil {
-		return payload, err
+		return nil, err
 	}
 
 	if m.isEncryptPayload {
 		rawPayload, err = m.encryptionManager.Decrypt(rawPayload)
 		if err != nil {
-			return payload, err
+			return nil, err
 		}
 	}
 
+	var payload config.Payload
 	err = json.Unmarshal(rawPayload, &payload)
-	return payload, err
+	return &payload, err
 }

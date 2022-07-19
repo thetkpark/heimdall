@@ -60,7 +60,7 @@ var _ = Describe("Token Manager", func() {
 			mockSignature.EXPECT().Verify([]byte(mockSignedToken)).Return(rawPayload, nil).Times(1)
 			retrievedPayload, err := tokenManager.Parse(mockSignedToken)
 			Expect(err).To(BeNil())
-			Expect(retrievedPayload).To(Equal(payload))
+			Expect(*retrievedPayload).To(Equal(payload))
 		})
 	})
 
@@ -87,7 +87,7 @@ var _ = Describe("Token Manager", func() {
 			mockEncryption.EXPECT().Decrypt(mockEncryptedRawPayload).Return(rawPayload, nil).Times(1)
 			retrievedPayload, err := tokenManager.Parse(mockSignedToken)
 			Expect(err).To(BeNil())
-			Expect(retrievedPayload).To(Equal(payload))
+			Expect(*retrievedPayload).To(Equal(payload))
 		})
 	})
 })
