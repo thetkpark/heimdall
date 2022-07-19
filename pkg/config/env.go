@@ -17,9 +17,7 @@ type Config struct {
 }
 
 func ParseConfig() (*Config, error) {
-	if err := godotenv.Load(".env"); err != nil {
-		return nil, err
-	}
+	_ = godotenv.Load()
 	cfg := &Config{}
 	err := env.Parse(cfg)
 	return cfg, err
