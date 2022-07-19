@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/thetkpark/heimdall/pkg/config"
 	"github.com/thetkpark/heimdall/pkg/token"
 	"go.uber.org/zap"
 	"net/http"
+	"reflect"
 	"regexp"
 	"time"
 )
@@ -51,6 +53,48 @@ func (h TokenHandler) GenerateToken(c *gin.Context) {
 }
 
 func (h TokenHandler) VerifyToken(c *gin.Context) {
+	payloadValue, ok := c.Get("payload")
+	if !ok {
+		h.logger.Error("Failed get payload from context")
+		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed get payload from context")
+		return
+	}
+	payload, ok := payloadValue.(*config.Payload)
+	if !ok {
+		h.logger.Error("Failed parse payload type")
+		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed parse payload type")
+		return
+	}
+	c.JSON(http.StatusOK, payload)
+}
+
+func (h TokenHandler) VerifyAndSetHeader(c *gin.Context) {
+	payloadValue, ok := c.Get("payload")
+	if !ok {
+		h.logger.Error("Failed get payload from context")
+		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed get payload from context")
+		return
+	}
+	payload, ok := payloadValue.(*config.Payload)
+	if !ok {
+		h.logger.Error("Failed parse payload type")
+		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed parse payload type")
+		return
+	}
+
+	for i := 0; i < reflect.TypeOf(payload.CustomPayload).NumField(); i++ {
+		field := reflect.TypeOf(payload.CustomPayload).Field(i)
+		headerName := field.Tag.Get("header")
+		h.logger.Info("headerName", headerName)
+		if len(headerName) > 0 {
+			val := fmt.Sprintf("%v", reflect.ValueOf(payload.CustomPayload).Field(i))
+			c.Header(headerName, val)
+		}
+	}
+	c.Status(http.StatusOK)
+}
+
+func (h TokenHandler) AuthenticateToken(c *gin.Context) {
 	bearerToken := c.GetHeader("Authorization")
 	reg, err := regexp.Compile(`Bearer (.+\..+\..+)`)
 	if err != nil {
@@ -58,14 +102,13 @@ func (h TokenHandler) VerifyToken(c *gin.Context) {
 		return
 	}
 	if !reg.MatchString(bearerToken) {
-		NewGinErrorResponse(c, http.StatusBadRequest, "Token in Authorization header doesn't in the correct format")
+		NewGinErrorResponse(c, http.StatusUnauthorized, "Token in Authorization header doesn't in the correct format")
 		return
 	}
 	tokenString := reg.FindStringSubmatch(bearerToken)[1]
 	payload, err := h.tokenManager.Parse(tokenString)
 	if err != nil {
-		h.logger.Errorw("h.tokenManager.Parse error", "error", err, "token", tokenString)
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed to verify token")
+		NewGinErrorResponse(c, http.StatusUnauthorized, "Token verification failed")
 		return
 	}
 
@@ -73,7 +116,7 @@ func (h TokenHandler) VerifyToken(c *gin.Context) {
 		NewGinErrorResponse(c, http.StatusUnauthorized, "Token is expired")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"user_id": payload.UserID,
-	})
+
+	c.Set("payload", payload)
+	c.Next()
 }

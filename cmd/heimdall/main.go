@@ -50,7 +50,8 @@ func main() {
 	signatureManager := signature.NewJWS(cfg.JWSSecretKey)
 	tokenManager := token.NewTokenManager(signatureManager, nil)
 	tokenHandler := handler.NewTokenHandler(sugaredLogger, tokenManager, cfg.TokenValidTime)
-	router.GET("/verify", tokenHandler.VerifyToken)
+	router.GET("/verify", tokenHandler.AuthenticateToken, tokenHandler.VerifyToken)
+	router.GET("/auth", tokenHandler.AuthenticateToken, tokenHandler.VerifyAndSetHeader)
 	router.POST("/generate", tokenHandler.GenerateToken)
 
 	_ = endless.ListenAndServe(":8080", router)
