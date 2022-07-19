@@ -8,9 +8,9 @@ import (
 	"io"
 )
 
-type Encryption interface {
-	Encrypt(plainText string) ([]byte, error)
-	Decrypt(cipherText []byte) (string, error)
+type Manager interface {
+	Encrypt(plainText []byte) ([]byte, error)
+	Decrypt(cipherText []byte) ([]byte, error)
 }
 
 func NewAESEncryption(key []byte) (*AES, error) {
@@ -32,25 +32,25 @@ type AES struct {
 	gcm cipher.AEAD
 }
 
-func (a AES) Encrypt(plaintext string) ([]byte, error) {
+func (a AES) Encrypt(plaintext []byte) ([]byte, error) {
 	nonce := make([]byte, a.gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, err
 	}
-	cipherText := a.gcm.Seal(nonce, nonce, []byte(plaintext), nil)
+	cipherText := a.gcm.Seal(nonce, nonce, plaintext, nil)
 	return cipherText, nil
 }
 
-func (a AES) Decrypt(cipherText []byte) (string, error) {
+func (a AES) Decrypt(cipherText []byte) ([]byte, error) {
 	nonceSize := a.gcm.NonceSize()
 	if len(cipherText) < nonceSize {
-		return "", errors.New("ciphertext length is shorter than nonce size")
+		return nil, errors.New("ciphertext length is shorter than nonce size")
 	}
 
 	nonce, cipherText := cipherText[:nonceSize], cipherText[nonceSize:]
 	plaintext, err := a.gcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(plaintext), nil
+	return plaintext, nil
 }

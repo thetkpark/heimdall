@@ -5,7 +5,7 @@ import (
 	goJWS "github.com/lestrrat-go/jwx/v2/jws"
 )
 
-type Signature interface {
+type Manager interface {
 	Sign(payload []byte) ([]byte, error)
 	Verify(token []byte) ([]byte, error)
 }

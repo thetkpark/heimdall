@@ -7,7 +7,7 @@ import (
 )
 
 var _ = Describe("Json Web Signature", func() {
-	var jws signature.Signature
+	var jws signature.Manager
 	key := "E2sK$Cps7v1sB2RW010HlSWdpS&CSOy4"
 	plaintext := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua")
 
