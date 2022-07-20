@@ -7,3 +7,6 @@ mockgen:
 	mockgen -source=pkg/encryption/aes.go -destination=test/mock_encryption/mock_aes.go
 	mockgen -source=pkg/signature/jws.go -destination=test/mock_signature/mock_jws.go
 	mockgen -source=pkg/token/token.go -destination=test/mock_token/mock_token.go
+
+unit-test:
+	ginkgo -r
