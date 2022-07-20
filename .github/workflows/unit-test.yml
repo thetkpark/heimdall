@@ -19,6 +19,9 @@ jobs:
       with:
         go-version: 1.18
         
+    - name: Go mod download
+      run: go mod download
+        
     - name: Get Ginkgo
       run: go get github.com/onsi/ginkgo/v2/ginkgo
         
