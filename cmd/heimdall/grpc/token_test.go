@@ -27,6 +27,10 @@ var _ = Describe("TokenServer_gRPC", func() {
 		tokenServer = grpc.NewTokenServer(zap.NewNop().Sugar(), mockTokenManager, time.Hour)
 	})
 
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
 	Context("GenerateToken", func() {
 		var (
 			handler  func(_ context.Context, tokenReq *pb.GenerateTokenRequest) (*pb.TokenResponse, error)
