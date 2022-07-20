@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/thetkpark/heimdall/pkg/config"
@@ -10,6 +11,17 @@ import (
 	"reflect"
 	"regexp"
 	"time"
+)
+
+var (
+	BadRequestBodyError        = errors.New("failed to bind JSON body")
+	TokenGenerationError       = errors.New("failed to generate token string")
+	GetPayloadFromContextError = errors.New("failed get payload from context")
+	PayloadTypeCastingError    = errors.New("failed to cast payload type")
+	TokenRegexCreationError    = errors.New("failed to create token regex")
+	TokenFormatError           = errors.New("token format is invalid")
+	TokenParsingError          = errors.New("failed to parse token")
+	TokenExpiredError          = errors.New("token is expired")
 )
 
 type TokenHandler struct {
@@ -30,7 +42,7 @@ func (h TokenHandler) GenerateToken(c *gin.Context) {
 	var customPayload config.CustomPayload
 	err := c.ShouldBindJSON(&customPayload)
 	if err != nil {
-		NewGinErrorResponse(c, http.StatusBadRequest, "Failed to bind JSON body")
+		_ = c.AbortWithError(http.StatusBadRequest, BadRequestBodyError)
 		return
 	}
 
@@ -44,7 +56,7 @@ func (h TokenHandler) GenerateToken(c *gin.Context) {
 	tokenString, err := h.tokenManager.Generate(payload)
 	if err != nil {
 		h.logger.Errorw("h.tokenManager.Generate error", "error", err, "payload", payload)
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed to generate token string")
+		_ = c.AbortWithError(http.StatusInternalServerError, TokenGenerationError)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -56,13 +68,13 @@ func (h TokenHandler) VerifyToken(c *gin.Context) {
 	payloadValue, ok := c.Get("payload")
 	if !ok {
 		h.logger.Error("Failed get payload from context")
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed get payload from context")
+		_ = c.AbortWithError(http.StatusInternalServerError, GetPayloadFromContextError)
 		return
 	}
 	payload, ok := payloadValue.(*config.Payload)
 	if !ok {
 		h.logger.Error("Failed parse payload type")
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed parse payload type")
+		_ = c.AbortWithError(http.StatusInternalServerError, PayloadTypeCastingError)
 		return
 	}
 	c.JSON(http.StatusOK, payload)
@@ -72,13 +84,13 @@ func (h TokenHandler) VerifyAndSetHeader(c *gin.Context) {
 	payloadValue, ok := c.Get("payload")
 	if !ok {
 		h.logger.Error("Failed get payload from context")
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed get payload from context")
+		_ = c.AbortWithError(http.StatusInternalServerError, GetPayloadFromContextError)
 		return
 	}
 	payload, ok := payloadValue.(*config.Payload)
 	if !ok {
 		h.logger.Error("Failed parse payload type")
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed parse payload type")
+		_ = c.AbortWithError(http.StatusInternalServerError, PayloadTypeCastingError)
 		return
 	}
 
@@ -97,22 +109,22 @@ func (h TokenHandler) AuthenticateToken(c *gin.Context) {
 	bearerToken := c.GetHeader("Authorization")
 	reg, err := regexp.Compile(`Bearer (.+\..+\..+)`)
 	if err != nil {
-		NewGinErrorResponse(c, http.StatusInternalServerError, "Failed to create regex against token")
+		_ = c.AbortWithError(http.StatusInternalServerError, TokenRegexCreationError)
 		return
 	}
 	if !reg.MatchString(bearerToken) {
-		NewGinErrorResponse(c, http.StatusUnauthorized, "Token in Authorization header doesn't in the correct format")
+		_ = c.AbortWithError(http.StatusUnauthorized, TokenFormatError)
 		return
 	}
 	tokenString := reg.FindStringSubmatch(bearerToken)[1]
 	payload, err := h.tokenManager.Parse(tokenString)
 	if err != nil {
-		NewGinErrorResponse(c, http.StatusUnauthorized, "Token verification failed")
+		_ = c.AbortWithError(http.StatusUnauthorized, TokenParsingError)
 		return
 	}
 
 	if payload.ExpiredAt.Before(time.Now()) {
-		NewGinErrorResponse(c, http.StatusUnauthorized, "Token is expired")
+		_ = c.AbortWithError(http.StatusUnauthorized, TokenExpiredError)
 		return
 	}
 

@@ -80,10 +80,11 @@ var _ = Describe("TokenHandler", func() {
 
 			It("should return 400", func() {
 				Expect(rec.Code).To(Equal(http.StatusBadRequest))
+				Expect(c.Errors.Last().Err).To(Equal(handler.BadRequestBodyError))
 			})
 		})
 
-		When("TokenManager error", func() {
+		When("Token generation error", func() {
 			BeforeEach(func() {
 				reqBody := strings.NewReader(`{"user_id": 99}`)
 				c.Request, _ = http.NewRequest(http.MethodPost, "/", reqBody)
@@ -92,6 +93,7 @@ var _ = Describe("TokenHandler", func() {
 
 			It("should return 500", func() {
 				Expect(rec.Code).To(Equal(http.StatusInternalServerError))
+				Expect(c.Errors.Last().Err).To(Equal(handler.TokenGenerationError))
 			})
 		})
 	})
@@ -118,11 +120,11 @@ var _ = Describe("TokenHandler", func() {
 		When("Payload is missing", func() {
 			It("should return 500", func() {
 				Expect(rec.Code).To(Equal(http.StatusInternalServerError))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Failed get payload from context","status":500}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.GetPayloadFromContextError))
 			})
 		})
 
-		When("Payload type is mismatched", func() {
+		When("Payload type casting error", func() {
 			var payload *config.CustomPayload
 			BeforeEach(func() {
 				payload = &config.CustomPayload{UserID: 99}
@@ -131,7 +133,7 @@ var _ = Describe("TokenHandler", func() {
 
 			It("should return 500", func() {
 				Expect(rec.Code).To(Equal(http.StatusInternalServerError))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Failed parse payload type","status":500}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.PayloadTypeCastingError))
 			})
 		})
 	})
@@ -164,11 +166,11 @@ var _ = Describe("TokenHandler", func() {
 		When("Payload is missing", func() {
 			It("should return 500", func() {
 				Expect(rec.Code).To(Equal(http.StatusInternalServerError))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Failed get payload from context","status":500}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.GetPayloadFromContextError))
 			})
 		})
 
-		When("Payload type is mismatched", func() {
+		When("Payload type casting error", func() {
 			var payload *config.CustomPayload
 			BeforeEach(func() {
 				payload = &config.CustomPayload{UserID: 99}
@@ -177,7 +179,7 @@ var _ = Describe("TokenHandler", func() {
 
 			It("should return 500", func() {
 				Expect(rec.Code).To(Equal(http.StatusInternalServerError))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Failed parse payload type","status":500}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.PayloadTypeCastingError))
 			})
 		})
 	})
@@ -214,9 +216,9 @@ var _ = Describe("TokenHandler", func() {
 				mockTokenManager.EXPECT().Parse(token).Return(payload, nil).Times(1)
 			})
 
-			It("should return unauthorized status", func() {
+			It("should return unauthorized status with error", func() {
 				Expect(rec.Code).To(Equal(http.StatusUnauthorized))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Token is expired","status":401}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.TokenExpiredError))
 			})
 		})
 
@@ -226,9 +228,9 @@ var _ = Describe("TokenHandler", func() {
 				c.Request.Header.Set("Authorization", "Bearer "+token)
 			})
 
-			It("should set the payload properly", func() {
+			It("should return unauthorized status with error", func() {
 				Expect(rec.Code).To(Equal(http.StatusUnauthorized))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Token in Authorization header doesn't in the correct format","status":401}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.TokenFormatError))
 			})
 		})
 
@@ -239,9 +241,9 @@ var _ = Describe("TokenHandler", func() {
 				mockTokenManager.EXPECT().Parse(token).Return(nil, errors.New("invalid token")).Times(1)
 			})
 
-			It("should set the payload properly", func() {
+			It("should return unauthorized status with error", func() {
 				Expect(rec.Code).To(Equal(http.StatusUnauthorized))
-				Expect(rec.Body.String()).To(Equal(`{"message":"Token verification failed","status":401}`))
+				Expect(c.Errors.Last().Err).To(Equal(handler.TokenParsingError))
 			})
 		})
 	})

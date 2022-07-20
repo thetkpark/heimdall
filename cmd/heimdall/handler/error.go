@@ -1,10 +1,14 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-func NewGinErrorResponse(c *gin.Context, code int, message string) {
-	c.AbortWithStatusJSON(code, gin.H{
-		"message": message,
-		"status":  code,
-	})
+func HTTPErrorHandler(c *gin.Context) {
+	c.Next()
+
+	if c.Errors.Last() != nil {
+		c.JSON(-1, c.Errors.Last())
+	}
+
 }

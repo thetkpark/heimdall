@@ -17,6 +17,7 @@ func NewGINServer(cfg *config.Config, tokenHandler *handler.TokenHandler) *http.
 		Repanic: true,
 	}))
 
+	router.Use(handler.HTTPErrorHandler)
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"success":   true,
