@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.4
-// source: cmd/heimdall/proto/token.proto
+// source: token.proto
 
 package proto
 
@@ -101,5 +101,5 @@ var Token_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "cmd/heimdall/proto/token.proto",
+	Metadata: "token.proto",
 }

@@ -1,12 +1,13 @@
 syntax = "proto3";
-option go_package = "github.com/thetkpark/heimdall/cmd/heimdall/proto";
+option go_package = "cmd/heimdall/proto";
+import "validate/validate.proto";
 
 service Token {
   rpc GenerateToken(GenerateTokenRequest) returns (TokenResponse) {}
 }
 
 message GenerateTokenRequest {
-  uint64 UserID = 1;
+  uint64 UserID = 1 [(validate.rules).uint64 = {}];
 }
 
 message TokenResponse {

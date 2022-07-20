@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/caarlos0/env/v6 v6.9.3
-	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
+	github.com/envoyproxy/protoc-gen-validate v0.1.0
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang/mock v1.6.0
