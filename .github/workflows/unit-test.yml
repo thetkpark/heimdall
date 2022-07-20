@@ -1,4 +1,4 @@
-name: Go Unit Test
+name: Test
 
 on:
   push:
@@ -19,8 +19,5 @@ jobs:
       with:
         go-version: 1.18
 
-    - name: Install Ginkgo
-      run: go get github.com/onsi/ginkgo/v2
-
     - name: Run unit tests
-      run: make unit-test
+      run: go test
