@@ -1,8 +1,9 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"github.com/fvbock/endless"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -58,7 +62,15 @@ func main() {
 	router.GET("/verify", tokenHandler.AuthenticateToken, tokenHandler.VerifyToken)
 	router.GET("/auth", tokenHandler.AuthenticateToken, tokenHandler.VerifyAndSetHeader)
 	router.POST("/generate", tokenHandler.GenerateToken)
-	go endless.ListenAndServe(":8080", router)
+	httpServer := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			ginLogger.Info("GIN HTTP listen: %s\n", err)
+		}
+	}()
 
 	// gRPC
 	grpcLogger := sugaredLogger.Named("grpc")
@@ -70,8 +82,25 @@ func main() {
 	grpcServer := grpc.NewServer()
 	grpcTokenServer := grpc2.NewTokenServer(grpcLogger, tokenManager, cfg.TokenValidTime)
 	pb.RegisterTokenServer(grpcServer, grpcTokenServer)
-	grpcLogger.Infof("Starting gRPC server on port")
-	if err := grpcServer.Serve(lis); err != nil {
-		grpcLogger.Fatalw("Failed to start gRPC server", "error", err)
+	go func() {
+		grpcLogger.Infof("Starting gRPC server on port")
+		if err := grpcServer.Serve(lis); err != nil {
+			grpcLogger.Fatalw("Failed to start gRPC server", "error", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	sugaredLogger.Info("SIG received, shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	grpcServer.GracefulStop()
+	if err := httpServer.Shutdown(ctx); err != nil {
+		ginLogger.Fatal("GIN server forced to shutdown:", err)
 	}
+
+	sugaredLogger.Info("Server exiting")
 }
