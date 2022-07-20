@@ -35,7 +35,7 @@ func main() {
 	sugaredLogger := zapLogger.Sugar()
 
 	if err := sentry.Init(sentry.ClientOptions{
-		Dsn:              "https://00b3b70ef73a48dfa377bad2fe9af84a@o1318116.ingest.sentry.io/6572271",
+		Dsn:              cfg.SentryDSN,
 		TracesSampleRate: 1.0,
 	}); err != nil {
 		sugaredLogger.Fatalw("Failed to init Sentry", "error", err)

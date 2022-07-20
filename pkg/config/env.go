@@ -12,6 +12,7 @@ type Config struct {
 	JWSSecretKey         string        `env:"JWS_SECRET_KEY,required"`
 	PayloadEncryptionKey string        `env:"PAYLOAD_ENCRYPTION_KEY"`
 	TokenValidTime       time.Duration `env:"TOKEN_VALID_TIME"`
+	SentryDSN            string        `env:"SENTRY_DSN"`
 	Mode                 string        `env:"MODE" envDefault:"development"`
 	GinMode              string        `env:"GIN_MODE" envDefault:"debug"`
 	GinPort              int           `env:"GIN_PORT" envDefault:"8080"`
