@@ -29,8 +29,8 @@ var _ = Describe("Token Manager", func() {
 		payload = config.Payload{
 			CustomPayload: config.CustomPayload{UserID: 99},
 			MetadataPayload: config.MetadataPayload{
-				IssuedAt:  time.Unix(1658201439, 0).UTC(),
-				ExpiredAt: time.Unix(1658201439, 0).Add(time.Second * 10).UTC(),
+				IssuedAt:  time.Now().UTC(),
+				ExpiredAt: time.Now().Add(time.Second * 10).UTC(),
 			},
 		}
 		var err error
