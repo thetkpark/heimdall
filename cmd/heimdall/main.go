@@ -5,16 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-gonic/gin"
-	grpc2 "github.com/thetkpark/heimdall/cmd/heimdall/grpc"
 	"github.com/thetkpark/heimdall/cmd/heimdall/handler"
-	pb "github.com/thetkpark/heimdall/cmd/heimdall/proto"
+	"github.com/thetkpark/heimdall/cmd/heimdall/server"
 	"github.com/thetkpark/heimdall/pkg/config"
 	"github.com/thetkpark/heimdall/pkg/logger"
 	"github.com/thetkpark/heimdall/pkg/signature"
 	"github.com/thetkpark/heimdall/pkg/token"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"net/http"
@@ -29,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to parse ENV: %v", err)
 	}
+
 	zapLogger, err := logger.NewLogger(cfg.Mode)
 	if err != nil {
 		log.Fatalf("Failed to initialized Zap: %v", err)
@@ -42,46 +39,27 @@ func main() {
 	}); err != nil {
 		sugaredLogger.Fatalw("Failed to init Sentry", "error", err)
 	}
-	defer sentry.Flush(2 * time.Second)
+	defer sentry.Flush(3 * time.Second)
 
-	ginLogger := sugaredLogger.Named("gin")
-	gin.SetMode(cfg.GinMode)
-	router := gin.Default()
-	router.Use(sentrygin.New(sentrygin.Options{
-		Repanic: true,
-	}))
-	router.GET("/healthcheck", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"success":   true,
-			"timestamp": time.Now(),
-		})
-	})
 	signatureManager := signature.NewJWS(cfg.JWSSecretKey)
 	tokenManager := token.NewTokenManager(signatureManager, nil)
-	tokenHandler := handler.NewTokenHandler(ginLogger, tokenManager, cfg.TokenValidTime)
-	router.GET("/verify", tokenHandler.AuthenticateToken, tokenHandler.VerifyToken)
-	router.GET("/auth", tokenHandler.AuthenticateToken, tokenHandler.VerifyAndSetHeader)
-	router.POST("/generate", tokenHandler.GenerateToken)
-	httpServer := &http.Server{
-		Addr:    ":8080",
-		Handler: router,
-	}
+	tokenHandler := handler.NewTokenHandler(sugaredLogger, tokenManager, cfg.TokenValidTime)
+
+	ginLogger := sugaredLogger.Named("GIN")
+	ginServer := server.NewGINServer(cfg, tokenHandler)
 	go func() {
-		if err := httpServer.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := ginServer.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			ginLogger.Info("GIN HTTP listen: %s\n", err)
 		}
 	}()
 
 	// gRPC
-	grpcLogger := sugaredLogger.Named("grpc")
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 5050))
+	grpcLogger := sugaredLogger.Named("gRPC")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		grpcLogger.Fatalw("Failed to listen", "error", err, "port", 5050)
 	}
-
-	grpcServer := grpc.NewServer()
-	grpcTokenServer := grpc2.NewTokenServer(grpcLogger, tokenManager, cfg.TokenValidTime)
-	pb.RegisterTokenServer(grpcServer, grpcTokenServer)
+	grpcServer := server.NewGRPCServer(grpcLogger, cfg, tokenManager)
 	go func() {
 		grpcLogger.Infof("Starting gRPC server on port")
 		if err := grpcServer.Serve(lis); err != nil {
@@ -98,7 +76,7 @@ func main() {
 	defer cancel()
 
 	grpcServer.GracefulStop()
-	if err := httpServer.Shutdown(ctx); err != nil {
+	if err := ginServer.Shutdown(ctx); err != nil {
 		ginLogger.Fatal("GIN server forced to shutdown:", err)
 	}
 

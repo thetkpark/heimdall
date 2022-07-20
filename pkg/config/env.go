@@ -14,6 +14,8 @@ type Config struct {
 	TokenValidTime       time.Duration `env:"TOKEN_VALID_TIME"`
 	Mode                 string        `env:"MODE" envDefault:"development"`
 	GinMode              string        `env:"GIN_MODE" envDefault:"debug"`
+	GinPort              int           `env:"GIN_PORT" envDefault:"8080"`
+	GRPCPort             int           `env:"GRPC_PORT" envDefault:"5050"`
 }
 
 func ParseConfig() (*Config, error) {
