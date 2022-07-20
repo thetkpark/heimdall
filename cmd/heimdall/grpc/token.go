@@ -27,6 +27,10 @@ type TokenServer struct {
 }
 
 func (s TokenServer) GenerateToken(_ context.Context, tokenReq *pb.GenerateTokenRequest) (*pb.TokenResponse, error) {
+	err := tokenReq.ValidateAll()
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	payload := config.Payload{
 		CustomPayload: config.CustomPayload{UserID: tokenReq.GetUserID()},
 		MetadataPayload: config.MetadataPayload{

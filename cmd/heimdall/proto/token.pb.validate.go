@@ -57,6 +57,17 @@ func (m *GenerateTokenRequest) validate(all bool) error {
 
 	var errors []error
 
+	if m.GetUserID() < 1 {
+		err := GenerateTokenRequestValidationError{
+			field:  "UserID",
+			reason: "value must be greater than or equal to 1",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return GenerateTokenRequestMultiError(errors)
 	}

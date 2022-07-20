@@ -7,7 +7,7 @@ service Token {
 }
 
 message GenerateTokenRequest {
-  uint64 UserID = 1 [(validate.rules).uint64 = {}];
+  uint64 UserID = 1 [(validate.rules).uint64.gte = 1];
 }
 
 message TokenResponse {
