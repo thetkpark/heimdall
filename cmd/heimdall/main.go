@@ -56,8 +56,9 @@ func main() {
 	ginLogger := sugaredLogger.Named("GIN")
 	ginServer := server.NewGINServer(cfg, tokenHandler)
 	go func() {
+		ginLogger.Infof("Starting GIN server on %d", cfg.GinPort)
 		if err := ginServer.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			ginLogger.Info("GIN HTTP listen: %s\n", err)
+			ginLogger.Infof("GIN HTTP listen error: %v\n", err)
 		}
 	}()
 
@@ -69,7 +70,7 @@ func main() {
 	}
 	grpcServer := server.NewGRPCServer(grpcLogger, cfg, tokenManager)
 	go func() {
-		grpcLogger.Infof("Starting gRPC server on port")
+		grpcLogger.Infof("Starting gRPC server on %d", cfg.GRPCPort)
 		if err := grpcServer.Serve(lis); err != nil {
 			grpcLogger.Fatalw("Failed to start gRPC server", "error", err)
 		}
