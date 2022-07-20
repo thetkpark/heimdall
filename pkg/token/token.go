@@ -14,16 +14,16 @@ type Manager interface {
 
 func NewTokenManager(sig signature.Manager, enc encryption.Manager) *manager {
 	mng := &manager{encryptionManager: enc, signatureManager: sig}
-	if enc != nil {
-		mng.isEncryptPayload = true
-	}
 	return mng
 }
 
 type manager struct {
 	signatureManager  signature.Manager
 	encryptionManager encryption.Manager
-	isEncryptPayload  bool
+}
+
+func (m *manager) SetEncryptionManager(enc encryption.Manager) {
+	m.encryptionManager = enc
 }
 
 func (m manager) Generate(payload config.Payload) (string, error) {
@@ -32,7 +32,7 @@ func (m manager) Generate(payload config.Payload) (string, error) {
 		return "", err
 	}
 
-	if m.isEncryptPayload {
+	if m.encryptionManager != nil {
 		rawPayload, err = m.encryptionManager.Encrypt(rawPayload)
 		if err != nil {
 			return "", err
@@ -52,7 +52,7 @@ func (m manager) Parse(token string) (*config.Payload, error) {
 		return nil, err
 	}
 
-	if m.isEncryptPayload {
+	if m.encryptionManager != nil {
 		rawPayload, err = m.encryptionManager.Decrypt(rawPayload)
 		if err != nil {
 			return nil, err
