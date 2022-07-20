@@ -11,6 +11,8 @@ on:
 jobs:
   unit-test:
     runs-on: ubuntu-latest
+    env:
+      GIN_MODE: release
     steps:
     - uses: actions/checkout@v3
     - name: Set up Go
@@ -23,9 +25,7 @@ jobs:
       run: go get github.com/onsi/ginkgo/v2/ginkgo
     - name: Install Ginkgo
       run: go install github.com/onsi/ginkgo/v2/ginkgo
-    
     - name: mockgen
       run: make mockgen
-
     - name: Run unit tests
       run: make unit-test
