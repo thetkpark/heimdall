@@ -8,6 +8,7 @@ import (
 	"github.com/thetkpark/heimdall/cmd/heimdall/handler"
 	"github.com/thetkpark/heimdall/cmd/heimdall/server"
 	"github.com/thetkpark/heimdall/pkg/config"
+	"github.com/thetkpark/heimdall/pkg/encryption"
 	"github.com/thetkpark/heimdall/pkg/logger"
 	"github.com/thetkpark/heimdall/pkg/signature"
 	"github.com/thetkpark/heimdall/pkg/token"
@@ -43,6 +44,13 @@ func main() {
 
 	signatureManager := signature.NewJWS(cfg.JWSSecretKey)
 	tokenManager := token.NewTokenManager(signatureManager, nil)
+	if len(cfg.PayloadEncryptionKey) > 0 {
+		encryptionManager, err := encryption.NewAESEncryption([]byte(cfg.PayloadEncryptionKey))
+		if err != nil {
+			sugaredLogger.Fatalw("Failed to init AESEncryption", "error", err)
+		}
+		tokenManager.SetEncryptionManager(encryptionManager)
+	}
 	tokenHandler := handler.NewTokenHandler(sugaredLogger, tokenManager, cfg.TokenValidTime)
 
 	ginLogger := sugaredLogger.Named("GIN")
