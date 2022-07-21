@@ -1,0 +1,110 @@
+definitions:
+  config.CustomPayload:
+    properties:
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
+  config.Payload:
+    properties:
+      expired_at:
+        type: string
+      issued_at:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handler.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is a Heimdall HTTP API for issueing and verifying tokens.
+  title: Heimdall HTTP API
+  version: 1.0.0
+paths:
+  /auth/body:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/config.Payload'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - JWSToken: []
+      summary: Verify token and parse payload
+      tags:
+      - token
+  /auth/header:
+    get:
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - JWSToken: []
+      summary: Verify token and set custom payload to header
+      tags:
+      - token
+  /generate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/config.CustomPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Generate token with the payload
+      tags:
+      - token
+securityDefinitions:
+  JWSToken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

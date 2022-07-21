@@ -98,9 +98,9 @@ var _ = Describe("TokenHandler", func() {
 		})
 	})
 
-	Context("VerifyToken", func() {
+	Context("Verify and parse payload to body", func() {
 		BeforeEach(func() {
-			handlerFunc = h.VerifyToken
+			handlerFunc = h.ParsePayload
 			c.Request, _ = http.NewRequest(http.MethodGet, "/", nil)
 		})
 
@@ -138,9 +138,9 @@ var _ = Describe("TokenHandler", func() {
 		})
 	})
 
-	Context("VerifyAndSetHeader", func() {
+	Context("Verify and parse payload to header", func() {
 		BeforeEach(func() {
-			handlerFunc = h.VerifyAndSetHeader
+			handlerFunc = h.ParsePayloadAndSetHeader
 			c.Request, _ = http.NewRequest(http.MethodGet, "/", nil)
 		})
 

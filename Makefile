@@ -12,3 +12,6 @@ mockgen:
 
 unit-test:
 	ginkgo -r
+
+swagger:
+	swag init --dir cmd/heimdall --parseDependency --parseInternal

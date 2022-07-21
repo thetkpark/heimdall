@@ -30,6 +30,14 @@ type TokenHandler struct {
 	validTime    time.Duration
 }
 
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func NewTokenHandler(logger *zap.SugaredLogger, tokenMng token.Manager, validTime time.Duration) *TokenHandler {
 	return &TokenHandler{
 		logger:       logger,
@@ -38,6 +46,16 @@ func NewTokenHandler(logger *zap.SugaredLogger, tokenMng token.Manager, validTim
 	}
 }
 
+// GenerateToken godoc
+// @Summary      Generate token with the payload
+// @Tags         token
+// @Accept       json
+// @Produce      json
+// @Param payload body config.CustomPayload true "Payload"
+// @Success      201  {object}  TokenResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /generate [POST]
 func (h TokenHandler) GenerateToken(c *gin.Context) {
 	var customPayload config.CustomPayload
 	err := c.ShouldBindJSON(&customPayload)
@@ -59,12 +77,19 @@ func (h TokenHandler) GenerateToken(c *gin.Context) {
 		_ = c.AbortWithError(http.StatusInternalServerError, TokenGenerationError)
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{
-		"token": tokenString,
-	})
+	c.JSON(http.StatusCreated, TokenResponse{Token: tokenString})
 }
 
-func (h TokenHandler) VerifyToken(c *gin.Context) {
+// ParsePayload godoc
+// @Summary      Verify token and parse payload
+// @Tags         token
+// @Security	 JWSToken
+// @Produce      json
+// @Success      200  {object}  config.Payload
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /auth/body [GET]
+func (h TokenHandler) ParsePayload(c *gin.Context) {
 	payloadValue, ok := c.Get("payload")
 	if !ok {
 		h.logger.Error("Failed get payload from context")
@@ -80,7 +105,15 @@ func (h TokenHandler) VerifyToken(c *gin.Context) {
 	c.JSON(http.StatusOK, payload)
 }
 
-func (h TokenHandler) VerifyAndSetHeader(c *gin.Context) {
+// ParsePayloadAndSetHeader godoc
+// @Summary      Verify token and set custom payload to header
+// @Tags         token
+// @Security	 JWSToken
+// @Success      200
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /auth/header [GET]
+func (h TokenHandler) ParsePayloadAndSetHeader(c *gin.Context) {
 	payloadValue, ok := c.Get("payload")
 	if !ok {
 		h.logger.Error("Failed get payload from context")
