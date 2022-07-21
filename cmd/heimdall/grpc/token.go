@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/getsentry/sentry-go"
 	pb "github.com/thetkpark/heimdall/cmd/heimdall/proto"
 	"github.com/thetkpark/heimdall/pkg/config"
 	"github.com/thetkpark/heimdall/pkg/token"
@@ -40,6 +41,10 @@ func (s TokenServer) GenerateToken(_ context.Context, tokenReq *pb.GenerateToken
 	}
 	tokenString, err := s.tokenManager.Generate(payload)
 	if err != nil {
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetExtra("payload", payload)
+			sentry.CaptureException(err)
+		})
 		s.logger.Errorw("s.tokenManager.Generate error", "error", err, "payload", payload)
 		return nil, status.Error(codes.Internal, "Failed to generate token string")
 	}
