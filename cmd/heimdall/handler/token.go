@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/thetkpark/heimdall/pkg/config"
 	"github.com/thetkpark/heimdall/pkg/token"
@@ -75,6 +76,9 @@ func (h TokenHandler) GenerateToken(c *gin.Context) {
 	if err != nil {
 		h.logger.Errorw("h.tokenManager.Generate error", "error", err, "payload", payload)
 		_ = c.AbortWithError(http.StatusInternalServerError, TokenGenerationError)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(err)
+		}
 		return
 	}
 	c.JSON(http.StatusCreated, TokenResponse{Token: tokenString})
@@ -94,12 +98,18 @@ func (h TokenHandler) ParsePayload(c *gin.Context) {
 	if !ok {
 		h.logger.Error("Failed get payload from context")
 		_ = c.AbortWithError(http.StatusInternalServerError, GetPayloadFromContextError)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(GetPayloadFromContextError)
+		}
 		return
 	}
 	payload, ok := payloadValue.(*config.Payload)
 	if !ok {
 		h.logger.Error("Failed parse payload type")
 		_ = c.AbortWithError(http.StatusInternalServerError, PayloadTypeCastingError)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(PayloadTypeCastingError)
+		}
 		return
 	}
 	c.JSON(http.StatusOK, payload)
@@ -118,12 +128,18 @@ func (h TokenHandler) ParsePayloadAndSetHeader(c *gin.Context) {
 	if !ok {
 		h.logger.Error("Failed get payload from context")
 		_ = c.AbortWithError(http.StatusInternalServerError, GetPayloadFromContextError)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(GetPayloadFromContextError)
+		}
 		return
 	}
 	payload, ok := payloadValue.(*config.Payload)
 	if !ok {
 		h.logger.Error("Failed parse payload type")
 		_ = c.AbortWithError(http.StatusInternalServerError, PayloadTypeCastingError)
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(PayloadTypeCastingError)
+		}
 		return
 	}
 
@@ -142,6 +158,9 @@ func (h TokenHandler) AuthenticateToken(c *gin.Context) {
 	bearerToken := c.GetHeader("Authorization")
 	reg, err := regexp.Compile(`Bearer (.+\..+\..+)`)
 	if err != nil {
+		if hub := sentrygin.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(err)
+		}
 		_ = c.AbortWithError(http.StatusInternalServerError, TokenRegexCreationError)
 		return
 	}
