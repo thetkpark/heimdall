@@ -232,7 +232,7 @@ var _ = Describe("TokenHandler", func() {
 			})
 
 			It("should set the payload properly", func() {
-				//Expect(rec.Code).To(Equal(http.StatusOK))
+				Expect(rec.Code).To(Equal(http.StatusOK))
 				settledPayloadValue, ok := c.Get("payload")
 				Expect(ok).To(BeTrue())
 				settledPayload, ok := settledPayloadValue.(*config.Payload)
