@@ -203,7 +203,6 @@ var _ = Describe("TokenHandler", func() {
 				Expect(ok).To(BeTrue())
 				settledPayload, ok := settledPayloadValue.(*config.Payload)
 				Expect(ok).To(BeTrue())
-
 				Expect(&settledPayload).To(Equal(&payload))
 			})
 		})
@@ -219,6 +218,26 @@ var _ = Describe("TokenHandler", func() {
 			It("should return unauthorized status with error", func() {
 				Expect(rec.Code).To(Equal(http.StatusUnauthorized))
 				Expect(c.Errors.Last().Err).To(Equal(handler.TokenExpiredError))
+			})
+		})
+
+		When("Token valid time is indefinite", func() {
+			BeforeEach(func() {
+				token := "valid.expired.token"
+				c.Request.Header.Set("Authorization", "Bearer "+token)
+				payload.ExpiredAt = time.Now().Add(-time.Hour)
+				mockTokenManager.EXPECT().Parse(token).Return(payload, nil).Times(1)
+				h = handler.NewTokenHandler(zap.NewNop().Sugar(), mockTokenManager, 0)
+				handlerFunc = h.AuthenticateToken
+			})
+
+			It("should set the payload properly", func() {
+				//Expect(rec.Code).To(Equal(http.StatusOK))
+				settledPayloadValue, ok := c.Get("payload")
+				Expect(ok).To(BeTrue())
+				settledPayload, ok := settledPayloadValue.(*config.Payload)
+				Expect(ok).To(BeTrue())
+				Expect(&settledPayload).To(Equal(&payload))
 			})
 		})
 
