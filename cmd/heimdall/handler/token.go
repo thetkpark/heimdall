@@ -175,11 +175,18 @@ func (h TokenHandler) AuthenticateToken(c *gin.Context) {
 		return
 	}
 
-	if payload.ExpiredAt.Before(time.Now()) {
+	if h.isTokenExpired(payload.ExpiredAt) {
 		_ = c.AbortWithError(http.StatusUnauthorized, TokenExpiredError)
 		return
 	}
 
 	c.Set("payload", payload)
 	c.Next()
+}
+
+func (h TokenHandler) isTokenExpired(expiredAt time.Time) bool {
+	if h.validTime.Microseconds() == 0 || expiredAt.After(time.Now()) {
+		return false
+	}
+	return true
 }
